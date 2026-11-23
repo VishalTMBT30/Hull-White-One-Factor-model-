@@ -1,0 +1,50 @@
+import numpy as np 
+import pandas as pd 
+
+
+### r(t) = x(t) + alpha(t)        
+def simulate_hull_white_one_factor(a: float, sigma: float, f, t)  -> pd.DataFrame:
+### a = speed of mean reversion, f = forward rate(constant rate for all maturities), t = time.
+  if not a>0:
+    raise ValueError(" a must be positive")  ### if a = 0 then use ho lee model.  
+  ### "A negative mean reversion speed means the short-term interest rate tends to move further away from its long-term average interest rate instead of returning towards it."
+  
+  ### it is just for undersatnding further code(next 2 lines of code)
+  # np.random.seed(1)
+  # simulate_Hull_White_One_Factor(0.04, 0.01, np.arange(0, 11), np.full(11, 0.03))
+  
+  t = np.asarray(t, dtype=float)  
+  f = np.asarray(f, dtype=float)
+
+  ### Shape = Number of rows and columns.
+  ### Size = Total number of elements.
+  
+
+  if t.ndim != 1 or t.size == 0 or t.shape != f.shape:
+    raise ValueError(" t and f must be non empty one dimentional arrays of the same length")
+  if t[0] < 0, np.any(np.diff(t) <= 0):
+    raise ValueError ("t must be non- negative and strictly increasing ")
+
+
+  alpha = f + sigma**2/(2*a**2)*(1-np.exp(-a*t))**2
+
+  x = np.zeros(t.shape[0])
+  x_prev, t_prev = 0.0, 0.0   ### boths first values would be zero. 
+
+
+  for el in range(t.shape[0]):
+    deltat = t[el] - t_prev 
+    mean = x_prev * np.exp(-a*deltat)
+    var = sigma**2/(2*a) * (1 - np.exp(-2*a*deltat))
+    x[el] = np.random.normal(mean, np.sqrt(var))
+    x_prev, t_prev = x[el], t[el]
+  r = x + alpha
+
+  data = {'Time' : t, 'Interest Rate' : r}
+
+  interest_rate_simulation = pd.DataFrame.from_dict(data = data)
+  interest_rate_simulation.set_index('Time', inplace = True)
+  return interest_rate_simulation
+
+
+
